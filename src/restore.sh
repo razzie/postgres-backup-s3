@@ -18,37 +18,37 @@ if [ -z "$S3_BUCKET" ]; then
   exit 1
 fi
 
-if [ -z "$POSTGRES_DATABASE" ]; then
-  echo "You need to set the POSTGRES_DATABASE environment variable."
-  exit 1
-fi
-
-if [ -z "$POSTGRES_HOST" ]; then
-  # TODO: what is this?
-  if [ -n "$POSTGRES_PORT_5432_TCP_ADDR" ]; then
-    POSTGRES_HOST=$POSTGRES_PORT_5432_TCP_ADDR
-    POSTGRES_PORT=$POSTGRES_PORT_5432_TCP_PORT
-  else
-    echo "You need to set the POSTGRES_HOST environment variable."
-    exit 1
-  fi
-fi
-
-if [ -z "$POSTGRES_USER" ]; then
-  echo "You need to set the POSTGRES_USER environment variable."
-  exit 1
-fi
-
-if [ -z "$POSTGRES_PASSWORD" ]; then
-  echo "You need to set the POSTGRES_PASSWORD environment variable" \
-       "or link to a container named POSTGRES."
-  exit 1
-fi
-
 if [ -z "$S3_ENDPOINT" ]; then
   aws_args=""
 else
   aws_args="--endpoint-url $S3_ENDPOINT"
+fi
+
+if [ -z "$POSTGRES_URL" ]; then
+  if [ -z "$POSTGRES_DATABASE" ]; then
+    echo "You need to set the POSTGRES_DATABASE environment variable."
+    exit 1
+  fi
+
+  if [ -z "$POSTGRES_HOST" ]; then
+    if [ -n "$POSTGRES_PORT_5432_TCP_ADDR" ]; then
+      POSTGRES_HOST=$POSTGRES_PORT_5432_TCP_ADDR
+      POSTGRES_PORT=$POSTGRES_PORT_5432_TCP_PORT
+    else
+      echo "You need to set the POSTGRES_HOST environment variable."
+      exit 1
+    fi
+  fi
+
+  if [ -z "$POSTGRES_USER" ]; then
+    echo "You need to set the POSTGRES_USER environment variable."
+    exit 1
+  fi
+
+  if [ -z "$POSTGRES_PASSWORD" ]; then
+    echo "You need to set the POSTGRES_PASSWORD environment variable."
+    exit 1
+  fi
 fi
 
 
@@ -87,7 +87,11 @@ if [ -n "$PASSPHRASE" ]; then
   rm db.dump.gpg
 fi
 
-conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DATABASE"
+if [ -z "$POSTGRES_URL" ]; then
+  conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DATABASE"
+else
+  conn_opts=$POSTGRES_URL
+fi
 
 echo "Restoring from backup..."
 pg_restore $conn_opts --clean --if-exists db.dump
