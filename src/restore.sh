@@ -90,7 +90,7 @@ fi
 if [ -z "$POSTGRES_URL" ]; then
   conn_opts="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER -d $POSTGRES_DATABASE"
 else
-  conn_opts=$POSTGRES_URL
+  conn_opts="-d $POSTGRES_URL"
 fi
 
 echo "Restoring from backup..."
